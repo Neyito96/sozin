@@ -27,10 +27,12 @@ jobs:
           mkdir -p _site
           cp index.html _site/index.html
           cp -R estimate _site/estimate
+          cp -R payment _site/payment
           touch _site/.nojekyll
           test -f _site/index.html
           test -f _site/estimate/index.html
           test -f _site/estimate/assets/js/app.js
+          test -f _site/payment/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
