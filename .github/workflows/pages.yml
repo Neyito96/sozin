@@ -1,15 +1,19 @@
 name: Deploy SOZIN Pages
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: sozin-pages
   cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -18,9 +22,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare isolated public site
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          cp -R estimate _site/estimate
+          touch _site/.nojekyll
+          test -f _site/index.html
+          test -f _site/estimate/index.html
+          test -f _site/estimate/assets/js/app.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
