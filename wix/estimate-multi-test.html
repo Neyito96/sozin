@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- SOZIN WIX PROTOTYPE VERSION 0.6.0-MULTI / ISSUE 21 / 2026-11-13 -->
+<!-- SOZIN WIX PROTOTYPE VERSION 0.6.1-MULTI / ISSUE 21 / 2026-11-13 -->
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SOZIN 複数商品お見積もり試作</title><style>
 :root{--ink:#302931;--rose:#9e7187;--bg:#faf6f7;--line:#e7dce2}
@@ -20,7 +20,7 @@ footer{font-size:12px;text-align:center;padding:22px;color:#746972}a{color:#8b56
 @media(max-width:780px){.layout{grid-template-columns:minmax(0,1fr)}.paper{position:static}.panel{padding:17px}main{padding:16px 11px}.row{grid-template-columns:1fr 1fr}}
 @media(max-width:430px){.row{grid-template-columns:1fr}.item{padding:12px}header{padding:26px 14px}header h1{font-size:21px}.paper{padding:17px}}
 </style></head><body>
-<div class="version">SOZIN 見積もりお試し Ver.0.6.0-multi｜Issue #21｜2026.11.13</div>
+<div class="version">SOZIN 見積もりお試し Ver.0.6.1-multi｜Issue #21｜2026.11.13</div>
 <header><div class="logo">SOZIN</div><div class="subtitle">Ballet de’ Arte</div><h1>商品を組み合わせて概算見積もり</h1><p>商品を複数選び、それぞれの数量・仕様を指定できます。</p></header>
 <main><div class="notice"><strong>試験用：正式な見積もり・請求書ではありません。</strong> 価格は公式参考価格またはご提示の料金表に基づく税込目安、送料別途です。セット注文などの適用条件は正式見積時に確認します。</div>
 <div class="layout"><section class="panel"><h2>1. ご希望の商品を追加</h2><label for="picker">商品</label><select id="picker"></select><button type="button" class="primary full" id="add">＋ 商品を追加する</button>
@@ -39,23 +39,26 @@ const catalog=[
 {id:'poster',name:'ポスター',type:'poster'},
 {id:'banner',name:'バナースタンド・交換ポスター',type:'banner'},
 {id:'ticket',name:'チケット（個別見積もり）',type:'unknown'},
-{id:'flyer',name:'チラシ（個別見積もり）',type:'unknown'}
+{id:'flyer',name:'チラシ・フライヤー（セット）',type:'flyer'}
 ];
 const poster={A2:{1:5500,10:16200,50:18300,100:20500},B2:{1:6500,10:23700,50:25900,100:28000},A1:{1:9500,10:38000}};
 const banner={standard:28000,slim:26000,posterStandard:15000,posterSlim:13000};
+const flyerPrices={100:[13800,15900],200:[14000,16200],300:[14200,16500],400:[14500,16800],500:[15100,17500],600:[15600,17800],700:[16200,18300],800:[16900,19200],900:[17600,19800],1000:[18500,20500],1500:[19700,22600],2000:[23500,27000]};
 const $=id=>document.getElementById(id),fmt=n=>n.toLocaleString('ja-JP')+'円',esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const select=(key,opts,value)=>'<select data-field="'+key+'">'+opts.map(([v,t])=>'<option value="'+esc(v)+'"'+(String(v)===String(value)?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select>';
 let items=[],count=0;
 $('picker').innerHTML=catalog.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
-function init(c){return {pages:c.type==='program'?16:c.type==='book'?4:2,copies:300,paper:'coat',size:'A4',qty:1,posterSize:'A2',posterCount:'10',variant:'standard',delivery:'fileOnly'};}
+function init(c){return {pages:c.type==='program'?16:c.type==='book'?4:2,copies:300,paper:'coat',size:'A4',qty:1,posterSize:'A2',posterCount:'10',variant:'standard',delivery:'fileOnly',flyerInk:'single'};}
 function fields(e,c){const v=e.v;if(c.type==='program'){return '<div class="row"><div><label>仕上がりサイズ</label>'+select('size',[['A4','A4'],['B5','B5']],v.size)+'</div><div><label>紙種（135kg）</label>'+select('paper',[['coat','コート紙'],['matte','マット紙']],v.paper)+'</div></div><div class="row"><div><label>ページ数</label>'+select('pages',pageSizes.map(x=>[x,x+'P']),v.pages)+'</div><div><label>印刷部数</label>'+select('copies',priceRows.map((_,i)=>[100*(i+1),(100*(i+1))+'部']),v.copies)+'</div></div><p class="small">表紙デザイン2案を含む・両面4色／本文白黒。4P二つ折り・6P三つ折り・その他中綴じ。</p>';}
 if(['pdf','book','set'].includes(c.type))return '<label>ページ数<input data-field="pages" type="number" min="'+(c.type==='book'?4:1)+'" max="300" step="1" value="'+v.pages+'"></label>'+(c.type==='set'?'<label>納品方法</label>'+select('delivery',[['fileOnly','データのみ'],['fileAndUrl','データ＋閲覧URL（1年間）']],v.delivery):'');
 if(c.type==='poster')return '<div class="row"><div><label>サイズ</label>'+select('posterSize',[['A2','A2'],['B2','B2'],['A1','A1']],v.posterSize)+'</div><div><label>枚数</label>'+select('posterCount',[[1,'1枚'],[10,'10枚'],[50,'50枚'],[100,'100枚']],v.posterCount)+'</div></div><p class="small">プログラムとセット・同デザイン利用時の参考価格。</p>';
+if(c.type==='flyer')return '<div class="row"><div><label>仕上がりサイズ</label>'+select('size',[['A4','A4'],['B5','B5']],v.size)+'</div><div><label>印刷色</label>'+select('flyerInk',[['single','片面4色'],['double','両面4色']],v.flyerInk)+'</div></div><label>部数</label>'+select('copies',Object.keys(flyerPrices).map(x=>[x,x+'部']),v.copies)+'<p class="small">コート紙90kg。プログラムとセット発注・同デザイン使用時のみ適用。その他のサイズ・枚数は個別見積もりです。</p>';
 if(c.type==='banner')return '<div class="row"><div><label>種別</label>'+select('variant',[['standard','スタンダード／スタンド付'],['slim','スリム／スタンド付'],['posterStandard','交換ポスター／スタンダード'],['posterSlim','交換ポスター／スリム']],v.variant)+'</div><div><label>セット数<input type="number" min="1" max="100" data-field="qty" value="'+v.qty+'"></label></div></div><p class="small">プログラムとセット・同デザイン利用時の参考価格。</p>';
 return '<p class="small">金額・数量・仕様を個別にご案内します。</p>';}
 function describe(e,c){const v=e.v;if(c.type==='program')return v.size+'・'+(v.paper==='coat'?'コート紙':'マット紙')+'135kg・'+v.pages+'P・'+v.copies+'部';
 if(['pdf','book','set'].includes(c.type))return v.pages+'P'+(c.type==='set'?(v.delivery==='fileOnly'?'／データのみ':'／データ＋URL1年'):'');
 if(c.type==='poster')return v.posterSize+'／'+v.posterCount+'枚';
+if(c.type==='flyer')return v.size+'・コート紙90kg・'+(v.flyerInk==='single'?'片面4色':'両面4色')+'・'+v.copies+'部';
 if(c.type==='banner')return v.variant+'／'+v.qty+'セット';return '要相談';}
 function quote(e,c){const v=e.v;const p=Number(v.pages);
 if(c.type==='program'){const i=Number(v.copies)/100-1,j=pageSizes.indexOf(p);return i>=0&&Number.isInteger(i)&&priceRows[i]&&j>=0?{amount:priceRows[i][j]}:{amount:null,reason:'このページ数・部数は個別見積もり'};}
@@ -63,13 +66,14 @@ if(c.type==='pdf')return Number.isInteger(p)&&p>=1&&p<=300?{amount:20000+Math.ma
 if(c.type==='book')return Number.isInteger(p)&&p>=4&&p<=300?{amount:35000+Math.ceil(Math.max(0,p-4)/2)*8000}:{amount:null,reason:'4ページ以上を指定'};
 if(c.type==='set')return Number.isInteger(p)&&p>=1&&p<=300?{amount:p*(v.delivery==='fileAndUrl'?2500:2000)}:{amount:null,reason:'ページ数が適用範囲外'};
 if(c.type==='poster')return poster[v.posterSize]?.[v.posterCount]!=null?{amount:poster[v.posterSize][v.posterCount],requiresProgram:true}:{amount:null,reason:'このサイズ・枚数は個別見積もり'};
+if(c.type==='flyer'){const price=flyerPrices[v.copies]?.[v.flyerInk==='single'?0:1];return price!=null&&['A4','B5'].includes(v.size)&&['single','double'].includes(v.flyerInk)?{amount:price,requiresProgram:true}:{amount:null,reason:'このサイズ・部数・印刷条件は個別見積もり'};}
 if(c.type==='banner')return Number.isInteger(Number(v.qty))&&Number(v.qty)>=1&&Number(v.qty)<=100?{amount:banner[v.variant]*Number(v.qty),requiresProgram:true}:{amount:null,reason:'セット数が適用範囲外'};
 return {amount:null,reason:'個別見積もりが必要'};
 }
 function render(){const hasProgram=items.some(e=>e.product==='program');
 $('items').innerHTML=items.length?items.map(e=>{const c=catalog.find(x=>x.id===e.product);return '<div class="item" data-id="'+e.id+'"><div class="itemtop"><strong>'+esc(c.name)+'</strong><button class="secondary mini" type="button" data-remove="'+e.id+'">削除</button></div>'+fields(e,c)+'</div>';}).join(''):'<p class="small">商品を追加してください。</p>';
 let sum=0,problems=[],lines=[];
-for(const e of items){const c=catalog.find(x=>x.id===e.product),q=quote(e,c);lines.push({name:c.name,spec:describe(e,c)});if(q.amount===null)problems.push(c.name+'：'+q.reason);else sum+=q.amount;if(q.requiresProgram&&!hasProgram)problems.push(c.name+'：プログラム同時注文・同デザインの条件を確認してください。');if(c.type==='set'&&!hasProgram)problems.push(c.name+'：印刷物セット注文の条件を確認してください。');}
+for(const e of items){const c=catalog.find(x=>x.id===e.product),q=quote(e,c);lines.push({name:c.name,spec:describe(e,c)});if(q.amount===null)problems.push(c.name+'：'+q.reason);else sum+=q.amount;if(q.requiresProgram&&!hasProgram)problems.push(c.name+'：プログラムのセット注文が必要です。同デザイン利用も条件です。');if(c.type==='set'&&!hasProgram)problems.push(c.name+'：印刷物セット注文の条件を確認してください。');}
 $('summary').innerHTML=lines.length?lines.map(x=>'<li>'+esc(x.name)+'<small>'+esc(x.spec)+'</small></li>').join(''):'<li>まだ選択されていません。</li>';
 $('total').textContent=!items.length?'未選択':problems.length?'個別見積もりが必要':fmt(sum);
 $('message').innerHTML=problems.length?'<div class="warn">一部に未確定・条件付きの商品があります。合計金額は確定できません。<ul>'+problems.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ul></div>':items.length?'<div class="ok">公式参考価格の掲載範囲で計算しました。送料・特殊仕様は別途。</div>':'';
