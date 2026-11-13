@@ -21,14 +21,12 @@ if(type==='flip'){const n=num('pages');lines.push(n+'ページ');if(valid(n,4,30
 if(type==='poster'){const s=val('size'),n=num('copies');lines.push(s+'・'+n+'枚');total=P.poster[s]?.[n]??null;notes.push('プログラムとセット・同デザイン利用の掲載料金。');}
 if(type==='banner'){const v=val('variant');lines.push($('variant').selectedOptions[0].textContent);total=P.banner[v]??null;notes.push('プログラムとセット・同デザイン利用の掲載料金。');}
 if(type==='setDigital'){const n=num('pages'),kind=val('delivery');lines.push(n+'ページ・'+$('delivery').selectedOptions[0].textContent);if(valid(n,1,300))total=n*P.setDigital[kind];notes.push('印刷物とのセット料金。印刷物の料金は含みません。');}
-if(type==='program'){const p=num('pages'),c=num('copies');lines.push(p+'ページ・'+c+'部');if(valid(p,4,200)&&valid(c,1,100000))total=Math.round((30000+p*2500+c*100)*1.1);notes.push('【デモ用仮計算】基本料30,000円＋ページ数×2,500円＋部数×100円、税10％。実際の価格表とは無関係です。');}
+if(type==='program'){const p=num('pages'),c=num('copies');lines.push(p+'ページ・'+c+'部');if(valid(p,4,200)&&valid(c,1,100000))total=Math.round((30000+p*2500+c*100)*1.1);notes.push('紙のプログラムは検証用の仮価格です。実際の料金表とは異なります。');}
 if(total!==null)notes.push('正式な料金ではありません。送料・特急料金・特殊仕様は別途。');else notes.push('こちらの仕様は個別にお見積もりいたします。');
+// Customer-facing documents show chosen specifications and the gross reference amount only.
 const breakdown=[];
-if(type==='program' && total!==null){const p=num('pages'),c=num('copies'),base=30000,pageFee=p*2500,printFee=c*100,subtotal=base+pageFee+printFee;
- breakdown.push(['基本制作費（仮）',base],['ページ制作費 '+p+'P × 2,500円（仮）',pageFee],['印刷部数 '+c+'部 × 100円（仮）',printFee],['税抜小計',subtotal],['消費税相当額（10%）',total-subtotal]);}
-else if(total!==null){breakdown.push(['参考価格・一式（税込）',total]);}
 lastEstimate={total,lines:[...lines],notes:[...notes],breakdown};
-$('breakdown').replaceChildren(...breakdown.map(([label,amount])=>{const div=document.createElement('div');div.className='item';const a=document.createElement('span'),b=document.createElement('span');a.textContent=label;b.textContent=yen(amount);div.append(a,b);return div;}));
+
 $('details').textContent=lines.join(' ／ ');$('price').textContent=total===null?'要お見積もり':yen(total);$('price').classList.toggle('pending',total===null);$('note').textContent=notes.join(' ');
 summary='SOZIN お見積もり相談（試作ページ）\n商品：'+lines.join(' ／ ')+'\n参考価格（税込）：'+(total===null?'要お見積もり':yen(total))+'\n※正式価格はSOZINにご確認ください。';
 }
@@ -54,8 +52,8 @@ $('fields').addEventListener('change',markDirty);$('fields').addEventListener('i
 $('copy').addEventListener('click',async()=>{if(!confirmed)return;try{await navigator.clipboard.writeText(summary);$('copied').textContent='コピーしました。LINEに貼り付けてください。';}catch(e){$('copied').textContent='コピーできない場合は画面をスクリーンショットしてください。';}});
 
 function createPdf(){
- // A4 one-sheet raster PDF, with all visible details and a clearly marked provisional status.
- const {total,lines,notes,breakdown=[]}=lastEstimate;
+ // A4 one-sheet customer estimate: selected specifications and gross price only.
+ const {total,lines,notes}=lastEstimate;
  const canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;
  const ctx=canvas.getContext('2d');if(!ctx)throw new Error('canvas unavailable');
  const W=1240,H=1754;
@@ -77,13 +75,9 @@ function createPdf(){
  text('ご希望の仕様',112,589,28,'#342b33','700');
  let y=643;for(const l of lines.slice(0,4)){text(l,128,y,27,'#3a3037','500');y+=42;}
  line(795);
- text('料金内訳',112,847,28,'#342b33','700');
- let ry=907;
- if(breakdown.length){for(const [label,amount] of breakdown.slice(0,6)){
-  text(label,128,ry,22,'#64535d','400',690);
-  ctx.textAlign='right';text(yen(amount),1116,ry,23,'#342b33','500',250);ctx.textAlign='left';
-  ry+=48;
- }}else{text('仕様確認後に個別見積もり',128,ry,23,'#756a71');}
+ text('ご希望の内容',112,847,28,'#342b33','700');
+ text('選択された制作仕様に基づく参考金額をご案内します。',128,907,23,'#756a71');
+ text('詳細な仕様・納期・正式金額は個別にご案内します。',128,954,23,'#756a71');
  ctx.fillStyle='#f3e7ed';ctx.fillRect(106,1214,1028,204);
  text('概算金額（税込）',143,1288,28,'#795768','500');
  text(total===null?'要お見積もり':yen(total),143,1380,total===null?57:73,'#915771','700',942);
