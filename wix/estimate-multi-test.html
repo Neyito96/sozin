@@ -43,7 +43,7 @@ const catalog=[
 ];
 const poster={A2:{1:5500,10:16200,50:18300,100:20500},B2:{1:6500,10:23700,50:25900,100:28000},A1:{1:9500,10:38000}};
 const banner={standard:28000,slim:26000,posterStandard:15000,posterSlim:13000};
-const $=id=>document.getElementById(id),fmt=n=>n.toLocaleString('ja-JP')+'円',esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id),fmt=n=>n.toLocaleString('ja-JP')+'円',esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const select=(key,opts,value)=>'<select data-field="'+key+'">'+opts.map(([v,t])=>'<option value="'+esc(v)+'"'+(String(v)===String(value)?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select>';
 let items=[],count=0;
 $('picker').innerHTML=catalog.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
