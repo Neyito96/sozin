@@ -1,0 +1,85 @@
+<!doctype html>
+<!-- SOZIN WIX PROTOTYPE VERSION 0.6.0-MULTI / ISSUE 21 / 2026-11-13 -->
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SOZIN 複数商品お見積もり試作</title><style>
+:root{--ink:#302931;--rose:#9e7187;--bg:#faf6f7;--line:#e7dce2}
+*{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}body{font:15px/1.8 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;color:var(--ink);background:var(--bg);margin:0}
+.version{padding:7px 12px;background:#f1e1e9;text-align:center;color:#86566e;font-size:11px;font-weight:600}
+header{text-align:center;background:#302931;color:white;padding:32px 18px}.logo{font:34px Georgia,serif;letter-spacing:.15em}.subtitle{font:italic 14px Georgia,serif;color:#e3bacb}header h1{font-size:24px;font-weight:500;margin:19px 0 7px}header p{font-size:13px;margin:0}
+main{max-width:1000px;margin:auto;padding:24px 16px}.notice{background:white;border-left:4px solid var(--rose);padding:12px 16px;font-size:13px;margin-bottom:22px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:18px;align-items:start}.panel{min-width:0;background:white;border:1px solid var(--line);padding:22px}
+h2{font-size:19px;margin:0 0 14px}h3{font-size:16px;margin:0}.small{font-size:12px;color:#7d6c75}
+label{display:block;font-size:12px;font-weight:600;margin:11px 0 4px}input,select{display:block;width:100%;font:inherit;font-size:16px;color:var(--ink);border:1px solid #c9bcc5;border-radius:3px;background:white;padding:10px;min-height:46px}
+button{font:inherit;cursor:pointer;padding:11px 13px;border-radius:3px;min-height:46px;border:1px solid var(--rose)}.primary{background:var(--rose);color:white}.secondary{background:white;color:#744d61}.full{width:100%;margin:13px 0}.mini{min-height:35px;font-size:12px;padding:4px 11px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.item{border:1px solid var(--line);border-left:3px solid #b28da0;padding:16px;margin:15px 0}.itemtop{display:flex;gap:9px;justify-content:space-between;align-items:start}.itemtop strong{font-size:14px}.item .small{margin-top:9px}
+.paper{position:sticky;top:10px;border:3px double #b99aab;padding:23px;background:#fffdfa}.paper h2{font:24px Georgia,"Yu Mincho",serif;border-bottom:1px solid var(--line);padding-bottom:15px}
+ul{list-style:none;padding:0;margin:13px 0}li{padding:10px 0;border-bottom:1px dotted #dfccd5;font-size:14px}li small{display:block;font-size:12px;color:#786c74}
+.total{font:700 clamp(27px,5vw,40px) Georgia,serif;color:#985e7a;padding:15px 0;border-top:2px solid #b791a4;overflow-wrap:anywhere}
+.warn{background:#fff0f0;color:#8c3c44;padding:12px;margin:12px 0;font-size:12px}.ok{background:#f0f7f2;color:#3e6a50;padding:12px;margin:12px 0;font-size:12px}
+footer{font-size:12px;text-align:center;padding:22px;color:#746972}a{color:#8b5672}
+@media(max-width:780px){.layout{grid-template-columns:minmax(0,1fr)}.paper{position:static}.panel{padding:17px}main{padding:16px 11px}.row{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){.row{grid-template-columns:1fr}.item{padding:12px}header{padding:26px 14px}header h1{font-size:21px}.paper{padding:17px}}
+</style></head><body>
+<div class="version">SOZIN 見積もりお試し Ver.0.6.0-multi｜Issue #21｜2026.11.13</div>
+<header><div class="logo">SOZIN</div><div class="subtitle">Ballet de’ Arte</div><h1>商品を組み合わせて概算見積もり</h1><p>商品を複数選び、それぞれの数量・仕様を指定できます。</p></header>
+<main><div class="notice"><strong>試験用：正式な見積もり・請求書ではありません。</strong> 価格は公式参考価格またはご提示の料金表に基づく税込目安、送料別途です。セット注文などの適用条件は正式見積時に確認します。</div>
+<div class="layout"><section class="panel"><h2>1. ご希望の商品を追加</h2><label for="picker">商品</label><select id="picker"></select><button type="button" class="primary full" id="add">＋ 商品を追加する</button>
+<h2 style="margin-top:24px">2. 仕様・数量を入力</h2><div id="items"><p class="small">商品を追加してください。</p></div></section>
+<aside class="panel"><div class="paper"><div class="small">SOZIN / QUOTATION DEMO</div><h2>お見積もりの目安</h2><ul id="summary"><li>まだ選択されていません。</li></ul><div class="small">参考合計（税込・送料別途）</div><div id="total" class="total">未選択</div><div id="message" aria-live="polite"></div>
+<p class="small">金額内訳や計算式は表示せず、商品・仕様・参考合計のみ表示します。</p><button class="secondary full" id="copy" type="button">選択内容をコピー</button></div></aside></div>
+</main><footer>創人デザインシステム株式会社｜<a href="https://www.sozindesign.com/price" target="_blank" rel="noopener">公式参考価格</a>｜正式仕様・納期・送料は個別にご確認ください。</footer>
+<script>
+(()=>{'use strict';
+const pageSizes=[4,6,8,12,16,20,24,28],priceRows=[[38800,63700,68000,91800,128500,162000,197600,233200],[39900,64200,71200,95500,129600,163000,198700,234300],[41000,65800,75000,99300,130600,164100,199800,235400],[43200,67500,77700,103600,136000,172800,211100,248400],[45300,70200,81000,110100,141400,181400,222400,261300],[47500,74500,86400,115500,146800,190000,231100,274300],[49600,78800,91800,120900,151200,199800,238600,286200],[51800,83100,96600,126300,156600,209500,246200,299100],[54000,87400,100400,130600,162000,218100,253800,311040],[56100,91800,104700,133900,166300,226800,261300,320700]];
+const catalog=[
+{id:'program',name:'発表会プログラム（デザイン＋印刷）',type:'program'},
+{id:'pdf',name:'デジタルプログラムPDF',type:'pdf'},
+{id:'book',name:'ページめくりデジタルブック',type:'book'},
+{id:'set',name:'印刷物セット・閲覧用データ',type:'set'},
+{id:'poster',name:'ポスター',type:'poster'},
+{id:'banner',name:'バナースタンド・交換ポスター',type:'banner'},
+{id:'ticket',name:'チケット（個別見積もり）',type:'unknown'},
+{id:'flyer',name:'チラシ（個別見積もり）',type:'unknown'}
+];
+const poster={A2:{1:5500,10:16200,50:18300,100:20500},B2:{1:6500,10:23700,50:25900,100:28000},A1:{1:9500,10:38000}};
+const banner={standard:28000,slim:26000,posterStandard:15000,posterSlim:13000};
+const $=id=>document.getElementById(id),fmt=n=>n.toLocaleString('ja-JP')+'円',esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const select=(key,opts,value)=>'<select data-field="'+key+'">'+opts.map(([v,t])=>'<option value="'+esc(v)+'"'+(String(v)===String(value)?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select>';
+let items=[],count=0;
+$('picker').innerHTML=catalog.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
+function init(c){return {pages:c.type==='program'?16:c.type==='book'?4:2,copies:300,paper:'coat',size:'A4',qty:1,posterSize:'A2',posterCount:'10',variant:'standard',delivery:'fileOnly'};}
+function fields(e,c){const v=e.v;if(c.type==='program'){return '<div class="row"><div><label>仕上がりサイズ</label>'+select('size',[['A4','A4'],['B5','B5']],v.size)+'</div><div><label>紙種（135kg）</label>'+select('paper',[['coat','コート紙'],['matte','マット紙']],v.paper)+'</div></div><div class="row"><div><label>ページ数</label>'+select('pages',pageSizes.map(x=>[x,x+'P']),v.pages)+'</div><div><label>印刷部数</label>'+select('copies',priceRows.map((_,i)=>[100*(i+1),(100*(i+1))+'部']),v.copies)+'</div></div><p class="small">表紙デザイン2案を含む・両面4色／本文白黒。4P二つ折り・6P三つ折り・その他中綴じ。</p>';}
+if(['pdf','book','set'].includes(c.type))return '<label>ページ数<input data-field="pages" type="number" min="'+(c.type==='book'?4:1)+'" max="300" step="1" value="'+v.pages+'"></label>'+(c.type==='set'?'<label>納品方法</label>'+select('delivery',[['fileOnly','データのみ'],['fileAndUrl','データ＋閲覧URL（1年間）']],v.delivery):'');
+if(c.type==='poster')return '<div class="row"><div><label>サイズ</label>'+select('posterSize',[['A2','A2'],['B2','B2'],['A1','A1']],v.posterSize)+'</div><div><label>枚数</label>'+select('posterCount',[[1,'1枚'],[10,'10枚'],[50,'50枚'],[100,'100枚']],v.posterCount)+'</div></div><p class="small">プログラムとセット・同デザイン利用時の参考価格。</p>';
+if(c.type==='banner')return '<div class="row"><div><label>種別</label>'+select('variant',[['standard','スタンダード／スタンド付'],['slim','スリム／スタンド付'],['posterStandard','交換ポスター／スタンダード'],['posterSlim','交換ポスター／スリム']],v.variant)+'</div><div><label>セット数<input type="number" min="1" max="100" data-field="qty" value="'+v.qty+'"></label></div></div><p class="small">プログラムとセット・同デザイン利用時の参考価格。</p>';
+return '<p class="small">金額・数量・仕様を個別にご案内します。</p>';}
+function describe(e,c){const v=e.v;if(c.type==='program')return v.size+'・'+(v.paper==='coat'?'コート紙':'マット紙')+'135kg・'+v.pages+'P・'+v.copies+'部';
+if(['pdf','book','set'].includes(c.type))return v.pages+'P'+(c.type==='set'?(v.delivery==='fileOnly'?'／データのみ':'／データ＋URL1年'):'');
+if(c.type==='poster')return v.posterSize+'／'+v.posterCount+'枚';
+if(c.type==='banner')return v.variant+'／'+v.qty+'セット';return '要相談';}
+function quote(e,c){const v=e.v;const p=Number(v.pages);
+if(c.type==='program'){const i=Number(v.copies)/100-1,j=pageSizes.indexOf(p);return i>=0&&Number.isInteger(i)&&priceRows[i]&&j>=0?{amount:priceRows[i][j]}:{amount:null,reason:'このページ数・部数は個別見積もり'};}
+if(c.type==='pdf')return Number.isInteger(p)&&p>=1&&p<=300?{amount:20000+Math.max(0,p-2)*5000}:{amount:null,reason:'ページ数が適用範囲外'};
+if(c.type==='book')return Number.isInteger(p)&&p>=4&&p<=300?{amount:35000+Math.ceil(Math.max(0,p-4)/2)*8000}:{amount:null,reason:'4ページ以上を指定'};
+if(c.type==='set')return Number.isInteger(p)&&p>=1&&p<=300?{amount:p*(v.delivery==='fileAndUrl'?2500:2000)}:{amount:null,reason:'ページ数が適用範囲外'};
+if(c.type==='poster')return poster[v.posterSize]?.[v.posterCount]!=null?{amount:poster[v.posterSize][v.posterCount],requiresProgram:true}:{amount:null,reason:'このサイズ・枚数は個別見積もり'};
+if(c.type==='banner')return Number.isInteger(Number(v.qty))&&Number(v.qty)>=1&&Number(v.qty)<=100?{amount:banner[v.variant]*Number(v.qty),requiresProgram:true}:{amount:null,reason:'セット数が適用範囲外'};
+return {amount:null,reason:'個別見積もりが必要'};
+}
+function render(){const hasProgram=items.some(e=>e.product==='program');
+$('items').innerHTML=items.length?items.map(e=>{const c=catalog.find(x=>x.id===e.product);return '<div class="item" data-id="'+e.id+'"><div class="itemtop"><strong>'+esc(c.name)+'</strong><button class="secondary mini" type="button" data-remove="'+e.id+'">削除</button></div>'+fields(e,c)+'</div>';}).join(''):'<p class="small">商品を追加してください。</p>';
+let sum=0,problems=[],lines=[];
+for(const e of items){const c=catalog.find(x=>x.id===e.product),q=quote(e,c);lines.push({name:c.name,spec:describe(e,c)});if(q.amount===null)problems.push(c.name+'：'+q.reason);else sum+=q.amount;if(q.requiresProgram&&!hasProgram)problems.push(c.name+'：プログラム同時注文・同デザインの条件を確認してください。');if(c.type==='set'&&!hasProgram)problems.push(c.name+'：印刷物セット注文の条件を確認してください。');}
+$('summary').innerHTML=lines.length?lines.map(x=>'<li>'+esc(x.name)+'<small>'+esc(x.spec)+'</small></li>').join(''):'<li>まだ選択されていません。</li>';
+$('total').textContent=!items.length?'未選択':problems.length?'個別見積もりが必要':fmt(sum);
+$('message').innerHTML=problems.length?'<div class="warn">一部に未確定・条件付きの商品があります。合計金額は確定できません。<ul>'+problems.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ul></div>':items.length?'<div class="ok">公式参考価格の掲載範囲で計算しました。送料・特殊仕様は別途。</div>':'';
+window.__sozinRows=lines;window.__sozinTotal=problems.length?null:sum;}
+$('add').addEventListener('click',()=>{const product=$('picker').value,c=catalog.find(x=>x.id===product);items.push({id:++count,product,v:init(c)});render();});
+$('items').addEventListener('click',event=>{const id=event.target.closest('[data-remove]')?.getAttribute('data-remove');if(id){items=items.filter(e=>String(e.id)!==id);render();}});
+const onEdit=event=>{const el=event.target.closest('[data-field]'),parent=event.target.closest('[data-id]');if(!el||!parent)return;const item=items.find(e=>String(e.id)===parent.getAttribute('data-id'));if(!item)return;item.v[el.getAttribute('data-field')]=el.value;render();};
+$('items').addEventListener('change',onEdit);
+$('items').addEventListener('input',event=>{if(event.target.matches('input[data-field]')){const el=event.target,parent=el.closest('[data-id]');const item=items.find(e=>String(e.id)===parent.getAttribute('data-id'));if(item)item.v[el.dataset.field]=el.value; /* avoid rerender while typing */}});
+$('copy').addEventListener('click',async()=>{const s='SOZIN見積もり相談（試作）\n'+(window.__sozinRows||[]).map(x=>x.name+'：'+x.spec).join('\n')+'\n参考合計：'+$('total').textContent+'\n※正式見積もりではありません・送料別途';try{await navigator.clipboard.writeText(s);$('message').insertAdjacentHTML('afterbegin','<div class="ok">選択内容をコピーしました。</div>');}catch(e){$('message').insertAdjacentHTML('afterbegin','<div class="warn">コピーできません。画面をスクリーンショットしてください。</div>');}});
+render();
+})();
+</script></body></html>
